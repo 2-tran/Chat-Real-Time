@@ -1,45 +1,91 @@
-import React from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { UserAddOutlined } from '@ant-design/icons';
 import { Button, Tooltip, Avatar, Form, Input } from 'antd';
 import styled from 'styled-components';
 import Message from './Message';
+import { AppContext } from '../../Context/AppProvider';
+import { AddDocument } from '../../firebase/services';
+import { AuthContext } from '../../Context/AuthProvider';
+import useFireStore from '../../hooks/useFireStore';
 
 export default function ChatWindow() {
+	const [form] = Form.useForm();
+	const { selectedRoom, members, setIsInviteMemberVisible } = useContext(AppContext);
+	const { userInfo: { uid, displayName, photoURL } } = useContext(AuthContext);
+	const [inputValue, setInputValue] = useState('');
+
+	const handleInputChange = (e) => {
+		setInputValue(e.target.value)
+	}
+
+	const handleOnSubmit = () => {
+		AddDocument('messages', {
+			text: inputValue,
+			uid,
+			photoURL,
+			roomId: selectedRoom.id,
+			displayName
+		});
+
+		form.resetFields(['message']);
+	}
+
+	const condition = useMemo(() => ({
+			fieldName: 'roomId',
+			operator: '==',
+			compareValue: selectedRoom?.id
+	}), [selectedRoom?.id]);
+
+	const messages = useFireStore('messages', condition);
+
 	return (
 		<WrapperStyled>
 			<HeaderStyled>
 				<div className="header__info">
-					<p className="header__title">Room 1</p>
-					<span className="header__description">Day la room 1</span>
+					<p className="header__title">{selectedRoom?.name}</p>
+					<span className="header__description">{selectedRoom?.description}</span>
 				</div>
 				<ButtonGroupStyled>
-					<Button icon={ <UserAddOutlined />} style={{ marginRight: '10px' }}>Invite</Button>
+					<Button onClick={() => setIsInviteMemberVisible(true)} icon={ <UserAddOutlined />} style={{ marginRight: '10px' }}>Invite</Button>
 					<Avatar.Group size="small" maxCount={2}>
-						<Tooltip title="A">
-							<Avatar>A</Avatar>
-						</Tooltip>
-						<Tooltip title="A">
-							<Avatar>A</Avatar>
-						</Tooltip>
-						<Tooltip title="A">
-							<Avatar>A</Avatar>
-						</Tooltip>
+						{
+							members?.map((member) => {
+								return (
+									<Tooltip title={member.displayName} key={member.id}>
+										<Avatar src={member.photoURL}>{member.photoURL ?? member.displayName?.charAt(0)?.toUpperCase()}</Avatar>
+									</Tooltip>
+								)
+							})
+						}
 					</Avatar.Group>
 				</ButtonGroupStyled>
 			</HeaderStyled>
 
 			<ContentStyled>
 				<MessageListStyled>
-					<Message text="test" photoURL="null" displayName="test" createdAt="12-02" />
-					<Message text="test" photoURL="null" displayName="test" createdAt="12-02" />
-					<Message text="test" photoURL="null" displayName="test" createdAt="12-02" />
-					<Message text="test" photoURL="null" displayName="test" createdAt="12-02" />
+					{
+						messages.map(mes => (
+							<Message 
+								key={mes.id}
+								text={mes.text} 
+								photoURL={mes.photoURL}
+								displayName={mes.displayName}
+								createdAt={mes.createdAt} 
+							/>
+						))
+					}
 				</MessageListStyled>
-				<FormStyled>
-					<Form.Item>
-						<Input placeholder="Enter message..." bordered={false} autoComplete='off' />
+				<FormStyled form={form}>
+					<Form.Item name="message">
+						<Input 
+							onChange={handleInputChange}
+							onPressEnter={handleOnSubmit}
+							placeholder="Enter message..." 
+							bordered={false} 
+							autoComplete='off' 
+						/>
 					</Form.Item>
-					<Button>Send</Button>
+					<Button onClick={handleOnSubmit}>Send</Button>
 				</FormStyled>
 			</ContentStyled>
 		</WrapperStyled>

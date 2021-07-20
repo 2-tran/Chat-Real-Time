@@ -7,10 +7,10 @@ export default function ChatRoom() {
 	return (
 		<div>
 			<Row>
-				<Col span={6}>
+				<Col md={6} xs={12} >
 					<Sidebar />
 				</Col>
-				<Col span={18}>
+				<Col md={18} xs={24}>
 					<ChatWindow />
 				</Col>
 			</Row>

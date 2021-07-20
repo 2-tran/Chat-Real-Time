@@ -17,9 +17,11 @@ export default function AuthProvider({ children }) {
 				setUserInfo({displayName, email, uid, photoURL});
 				setIsLoading(false);
 				history.push('/');
-			} else {
-				history.push('/login');
+				return;
 			}
+			
+			history.push('/login');
+			setIsLoading(false);
 		});
 		
 		return () => {
@@ -29,7 +31,7 @@ export default function AuthProvider({ children }) {
 
 	return (
 		<AuthContext.Provider value={{ userInfo }}>
-			{ isLoading ? <Spin /> : children }
+			{ isLoading ? <Spin style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }} /> : children }
 		</AuthContext.Provider>
 	);
 }
